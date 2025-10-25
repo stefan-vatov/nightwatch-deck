@@ -6,23 +6,23 @@
 - **What’s missing:** README is untouched template, UI is placeholder, and no domain-specific copy exists yet. Treat this repo as a foundation to evolve.
 
 ## Project Layout
-| Area | Description |
-| --- | --- |
-| `src/App.tsx` | Current UI surface (Vite counter demo plus SVG/Tailwind utility sample). Update this file for feature work. |
-| `src/main.tsx` | React entry; imports `src/index.css` and renders `App`. |
-| `src/App.css` / `src/index.css` | Component styles plus Tailwind base import (`@import "tailwindcss";`) and design tokens. |
-| `index.html` | Minimal document with `#root` mount. |
-| `vite.config.ts` | Registers `@vitejs/plugin-react-swc` and `@tailwindcss/vite`. |
-| `eslint.config.js`, `tsconfig*.json` | Lint + strict TS compiler settings. |
-| `public/` | Static assets served as-is (currently just defaults). |
+| Area                                 | Description                                                                                                 |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `src/App.tsx`                        | Current UI surface (Vite counter demo plus SVG/Tailwind utility sample). Update this file for feature work. |
+| `src/main.tsx`                       | React entry; imports `src/index.css` and renders `App`.                                                     |
+| `src/App.css` / `src/index.css`      | Component styles plus Tailwind base import (`@import "tailwindcss";`) and design tokens.                    |
+| `index.html`                         | Minimal document with `#root` mount.                                                                        |
+| `vite.config.ts`                     | Registers `@vitejs/plugin-react-swc` and `@tailwindcss/vite`.                                               |
+| `eslint.config.js`, `tsconfig*.json` | Lint + strict TS compiler settings.                                                                         |
+| `public/`                            | Static assets served as-is (currently just defaults).                                                       |
 
 ## Tooling & Scripts (`package.json`)
-| Script | Purpose |
-| --- | --- |
-| `npm run dev` | Launch Vite dev server with HMR (default port 5173). |
-| `npm run build` | Type-check via project references (`tsc -b`) then bundle with Vite. |
-| `npm run preview` | Serve the production build locally for smoke-testing. |
-| `npm run lint` | Run ESLint across the repo (`eslint .`). |
+| Script            | Purpose                                                             |
+| ----------------- | ------------------------------------------------------------------- |
+| `npm run dev`     | Launch Vite dev server with HMR (default port 5173).                |
+| `npm run build`   | Type-check via project references (`tsc -b`) then bundle with Vite. |
+| `npm run preview` | Serve the production build locally for smoke-testing.               |
+| `npm run lint`    | Run ESLint across the repo (`eslint .`).                            |
 
 ### Dependencies
 - Runtime: `react`, `react-dom`, `tailwindcss`, `@tailwindcss/vite`.
@@ -32,6 +32,7 @@
 - Rendering via React 19 hooks + SWC-based JSX transform.
 - Vite handles module graph + dev server; entry script declared in `index.html`.
 - Tailwind CSS v4 utilities activated through the official Vite plugin (`vite.config.ts`) and global import in `src/index.css`. Custom utilities can be declared inline (see SVG snippet in `src/App.tsx`).
+- Projects has ShadCN installed and configured, ready to go. Use ShadCN for all UI related component work
 
 ## Conventions & Environment
 - **TypeScript:** Strict mode with unused symbol guards and bundler-style resolution configured in `tsconfig.app.json`. Keep `.tsx` components typed explicitly.
