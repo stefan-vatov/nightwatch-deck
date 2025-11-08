@@ -1,5 +1,7 @@
 # Nightwatch Deck – Planning Poker
 
+![Nightwatch Deck Planning Poker UI](public/deck.png)
+
 Nightwatch Deck now ships as a collaborative Planning Poker surface for sprint estimation. The legacy Mission Overview / Agent Briefing screens and the standalone `prototype/` folder have been removed—the app boots directly into the estimation experience hosted under `src/components/generated/PlanningPokerApp.tsx`.
 
 ## Feature Highlights
