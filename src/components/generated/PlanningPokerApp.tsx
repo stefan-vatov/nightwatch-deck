@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Users,
@@ -14,20 +14,17 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import type {
+  ClientToServerMessage,
+  EstimationCard,
+  ParticipantSnapshot,
+  RoomSnapshot,
+  ServerToClientMessage,
+} from "@shared/planning-poker"
 
-type EstimationCard = 0 | 1 | 2 | 3 | 5 | 8 | 13 | 21 | 34 | 55 | 89 | "?"
-type Player = {
-  id: string
-  name: string
-  estimate: EstimationCard | null
-  isOwner: boolean
-}
-type Room = {
-  id: string
-  players: Player[]
-  revealed: boolean
-}
 type AppState = "home" | "join" | "room"
+type ConnectionStatus = "idle" | "connecting" | "ready" | "error"
+type ServerMessage = ServerToClientMessage
 
 const FIBONACCI_CARDS: EstimationCard[] = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "?"]
 const HOME_HIGHLIGHTS = [
@@ -44,15 +41,61 @@ const JOIN_TIPS = [
 
 const inputClasses =
   "w-full rounded-2xl border border-input bg-background px-4 py-3 text-base shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+const PLAYER_ID_STORAGE_KEY = "nightwatch-deck:player-id"
+
+const ensureWsProtocol = (input: string) => {
+  if (input.startsWith("ws://") || input.startsWith("wss://")) {
+    return input.replace(/\/$/, "")
+  }
+  if (input.startsWith("https://")) {
+    return input.replace("https://", "wss://").replace(/\/$/, "")
+  }
+  if (input.startsWith("http://")) {
+    return input.replace("http://", "ws://").replace(/\/$/, "")
+  }
+  return `wss://${input.replace(/\/$/, "")}`
+}
+
+const buildWebSocketUrl = (roomId: string) => {
+  const override = import.meta.env.VITE_WS_BASE?.trim()
+  if (override && override.length > 0) {
+    return `${ensureWsProtocol(override)}/ws/${roomId}`
+  }
+  if (typeof window === "undefined") {
+    throw new Error("WebSocket base unavailable")
+  }
+  return `${ensureWsProtocol(window.location.origin)}/ws/${roomId}`
+}
+
+const getStoredPlayerId = () => {
+  if (typeof window === "undefined") {
+    return crypto.randomUUID()
+  }
+  const cached = window.localStorage.getItem(PLAYER_ID_STORAGE_KEY)
+  if (cached) return cached
+  const generated = crypto.randomUUID()
+  window.localStorage.setItem(PLAYER_ID_STORAGE_KEY, generated)
+  return generated
+}
 
 // @component: PlanningPokerApp
 export const PlanningPokerApp = () => {
   const [appState, setAppState] = useState<AppState>("home")
-  const [room, setRoom] = useState<Room | null>(null)
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
+  const [room, setRoom] = useState<RoomSnapshot | null>(null)
   const [nameInput, setNameInput] = useState("")
   const [roomIdInput, setRoomIdInput] = useState("")
   const [copied, setCopied] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle")
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [playerId] = useState(() => getStoredPlayerId())
+  const socketRef = useRef<WebSocket | null>(null)
+  const pendingRoomIdRef = useRef<string | null>(null)
+  const intentionalDisconnectRef = useRef(false)
+
+  const currentPlayer = useMemo<ParticipantSnapshot | null>(() => {
+    if (!room) return null
+    return room.players.find(player => player.id === playerId) ?? null
+  }, [room, playerId])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -63,90 +106,152 @@ export const PlanningPokerApp = () => {
     }
   }, [])
 
+  useEffect(
+    () => () => {
+      intentionalDisconnectRef.current = true
+      socketRef.current?.close(1000, "Component unmounted")
+    },
+    []
+  )
+
   const generateRoomId = () => Math.random().toString(36).substring(2, 8).toUpperCase()
+  const activeRoomId = room?.id ?? pendingRoomIdRef.current
+
+  const sendMessage = (message: ClientToServerMessage) => {
+    const socket = socketRef.current
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      setConnectionError("Connection unavailable")
+      return
+    }
+    socket.send(JSON.stringify(message))
+  }
+
+  const handleServerMessage = (payload: string) => {
+    let parsed: ServerMessage
+    try {
+      parsed = JSON.parse(payload) as ServerMessage
+    } catch (error) {
+      console.error("Failed to parse server payload", error)
+      return
+    }
+
+    switch (parsed.type) {
+      case "room:init":
+        pendingRoomIdRef.current = parsed.room.id
+        setRoom(parsed.room)
+        setAppState("room")
+        setConnectionStatus("ready")
+        break
+      case "room:update":
+        setRoom(parsed.room)
+        break
+      case "error":
+        setConnectionError(parsed.message)
+        break
+      case "pong":
+      default:
+        break
+    }
+  }
+
+  const startConnection = (roomId: string, displayName: string) => {
+    setRoom(null)
+    setConnectionError(null)
+    setConnectionStatus("connecting")
+    pendingRoomIdRef.current = roomId
+    intentionalDisconnectRef.current = false
+
+    try {
+      const socket = new WebSocket(buildWebSocketUrl(roomId))
+      socketRef.current?.close(1000, "Switching rooms")
+      socketRef.current = socket
+
+      socket.addEventListener("open", () => {
+        const joinPayload: ClientToServerMessage = {
+          type: "join",
+          roomId,
+          playerId,
+          name: displayName.trim(),
+        }
+        socket.send(JSON.stringify(joinPayload))
+      })
+
+      socket.addEventListener("message", event => {
+        if (typeof event.data !== "string") return
+        handleServerMessage(event.data)
+      })
+
+      socket.addEventListener("close", event => {
+        socketRef.current = null
+        const wasIntentional = intentionalDisconnectRef.current
+        intentionalDisconnectRef.current = false
+        if (!wasIntentional) {
+          setRoom(null)
+          pendingRoomIdRef.current = null
+          setConnectionError(event.reason || "Connection closed")
+          setAppState("join")
+        }
+        setConnectionStatus("idle")
+      })
+
+      socket.addEventListener("error", () => {
+        setConnectionStatus("error")
+        setConnectionError("WebSocket connection failed")
+      })
+    } catch (error) {
+      console.error("Failed to open WebSocket", error)
+      setConnectionStatus("error")
+      setConnectionError("Unable to create room connection")
+    }
+  }
 
   const createRoom = () => {
-    if (!nameInput.trim()) return
+    const trimmedName = nameInput.trim()
+    if (!trimmedName) return
     const roomId = generateRoomId()
-    const player: Player = {
-      id: Math.random().toString(36).substring(7),
-      name: nameInput.trim(),
-      estimate: null,
-      isOwner: true,
-    }
-    const newRoom: Room = {
-      id: roomId,
-      players: [player],
-      revealed: false,
-    }
-    setCurrentPlayer(player)
-    setRoom(newRoom)
+    startConnection(roomId, trimmedName)
     setAppState("room")
     window.history.pushState({}, "", `?room=${roomId}`)
   }
 
   const joinRoom = () => {
-    if (!nameInput.trim() || !roomIdInput.trim()) return
-    const player: Player = {
-      id: Math.random().toString(36).substring(7),
-      name: nameInput.trim(),
-      estimate: null,
-      isOwner: false,
-    }
-    const newRoom: Room = {
-      id: roomIdInput.trim().toUpperCase(),
-      players: [player],
-      revealed: false,
-    }
-    setCurrentPlayer(player)
-    setRoom(newRoom)
+    const trimmedName = nameInput.trim()
+    const trimmedRoomId = roomIdInput.trim().toUpperCase()
+    if (!trimmedName || !trimmedRoomId) return
+    startConnection(trimmedRoomId, trimmedName)
     setAppState("room")
+    window.history.pushState({}, "", `?room=${trimmedRoomId}`)
   }
 
   const selectCard = (card: EstimationCard) => {
-    if (!currentPlayer || !room) return
-    const updatedPlayer = {
-      ...currentPlayer,
-      estimate: card,
-    }
-    setCurrentPlayer(updatedPlayer)
-    const updatedPlayers = room.players.map(player => (player.id === currentPlayer.id ? updatedPlayer : player))
-    setRoom({
-      ...room,
-      players: updatedPlayers,
+    if (!currentPlayer || !room || room.revealed) return
+    sendMessage({
+      type: "vote",
+      playerId,
+      value: card,
     })
   }
 
   const revealEstimates = () => {
     if (!room || !currentPlayer?.isOwner) return
-    setRoom({
-      ...room,
-      revealed: true,
+    sendMessage({
+      type: "reveal",
+      playerId,
     })
   }
 
   const resetEstimates = () => {
     if (!room || !currentPlayer?.isOwner) return
-    const resetPlayers = room.players.map(player => ({
-      ...player,
-      estimate: null,
-    }))
-    setRoom({
-      ...room,
-      players: resetPlayers,
-      revealed: false,
+    sendMessage({
+      type: "reset",
+      playerId,
     })
-    if (currentPlayer) {
-      setCurrentPlayer({
-        ...currentPlayer,
-        estimate: null,
-      })
-    }
   }
 
   const copyRoomLink = async () => {
-    if (!room) return
-    const link = `${window.location.origin}${window.location.pathname}?room=${room.id}`
+    const roomCode = room?.id ?? pendingRoomIdRef.current
+    if (!roomCode) return
+    const link = `${window.location.origin}${window.location.pathname}?room=${roomCode}`
     try {
       if (!navigator.clipboard || !navigator.clipboard.writeText) {
         throw new Error("Clipboard API unavailable")
@@ -160,34 +265,47 @@ export const PlanningPokerApp = () => {
   }
 
   const leaveRoom = () => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      sendMessage({
+        type: "leave",
+        playerId,
+      })
+    }
+    intentionalDisconnectRef.current = true
+    socketRef.current?.close(1000, "Left room")
+    socketRef.current = null
     setRoom(null)
-    setCurrentPlayer(null)
     setNameInput("")
     setRoomIdInput("")
     setAppState("home")
+    pendingRoomIdRef.current = null
+    setConnectionStatus("idle")
+    setConnectionError(null)
     window.history.pushState({}, "", window.location.pathname)
   }
 
   const getEstimateGroups = () => {
     if (!room) return []
-    const groups = new Map<EstimationCard | null, Player[]>()
+    const groups = new Map<EstimationCard | null, ParticipantSnapshot[]>()
     room.players.forEach(player => {
-      const estimate = player.estimate
-      if (!groups.has(estimate)) {
-        groups.set(estimate, [])
-      }
-      groups.get(estimate)?.push(player)
+      const key = player.estimate
+      const existing = groups.get(key ?? null) ?? []
+      existing.push(player)
+      groups.set(key ?? null, existing)
     })
-    return Array.from(groups.entries()).sort((a, b) => {
-      if (a[0] === null) return 1
-      if (b[0] === null) return -1
-      if (a[0] === "?") return 1
-      if (b[0] === "?") return -1
-      return (a[0] as number) - (b[0] as number)
-    })
+    const orderFor = (value: EstimationCard | null) => {
+      if (value === null) return Number.MAX_SAFE_INTEGER
+      if (value === "?") return Number.MAX_SAFE_INTEGER - 1
+      return FIBONACCI_CARDS.indexOf(value)
+    }
+    return Array.from(groups.entries()).sort((a, b) => orderFor(a[0]) - orderFor(b[0]))
   }
 
-  const allPlayersVoted = () => room?.players.every(player => player.estimate !== null) ?? false
+  const allPlayersVoted = () => {
+    if (!room) return false
+    if (room.players.length === 0) return false
+    return room.players.every(player => player.estimate !== null)
+  }
 
   const renderHome = () => (
     <motion.div
@@ -363,7 +481,47 @@ export const PlanningPokerApp = () => {
   )
 
   const renderRoom = () => {
-    if (!room || !currentPlayer) return null
+    if (!room || !currentPlayer) {
+      const connectionCopy =
+        connectionStatus === "connecting"
+          ? "Negotiating a WebSocket session at the edge..."
+          : connectionStatus === "error"
+            ? "We lost the live connection. Rejoin or head back to start."
+            : "Waiting for the room to sync."
+
+      return (
+        <motion.div
+          key="room-connecting"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="space-y-8"
+        >
+          <Card className="rounded-[2rem] border border-border/70 bg-card/95 shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-2xl">
+                {activeRoomId ? `Connecting to ${activeRoomId}` : "Connecting to room"}
+              </CardTitle>
+              <CardDescription>{connectionCopy}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {connectionError && (
+                <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {connectionError}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" variant="secondary" onClick={leaveRoom} className="rounded-2xl px-4 text-sm font-semibold">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )
+    }
+
     return (
       <motion.div
         key="room"
@@ -372,6 +530,11 @@ export const PlanningPokerApp = () => {
         exit={{ opacity: 0, y: -20 }}
         className="space-y-8"
       >
+        {connectionError && (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {connectionError}
+          </div>
+        )}
         <Card className="rounded-[2rem] border border-border/70 bg-card/95 shadow-2xl">
           <CardHeader className="gap-6 p-6 sm:flex sm:items-center sm:justify-between">
             <div className="space-y-3">

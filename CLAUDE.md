@@ -28,10 +28,16 @@
 ## Tooling & Scripts (package.json)
 | Script | Purpose |
 | ------ | ------- |
-| npm run dev | Start Vite dev server with HMR (default port 5173). |
+| npm run dev | Start the Vite dev server on 127.0.0.1:5173 (strict port). |
+| npm run dev:app | Same as `dev`, but injects `VITE_WS_BASE=http://127.0.0.1:8787` for Worker connectivity. |
+| npm run dev:worker | Launch wrangler dev for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787. |
+| npm run dev:stack | Run `dev:worker` and `dev:app` in parallel (full local stack). |
+| npm run stack:stop | Stop lingering Vite/Wrangler/workerd processes when ports are stuck. |
 | npm run build | Type-check via project references (tsc -b) and build with Vite. |
 | npm run preview | Preview the production build locally. |
 | npm run lint | Run ESLint across the repo. |
+
+> Vite runs with `--strictPort`, so free port 5173 first (e.g., `npm run stack:stop`) if the dev server refuses to start.
 
 ### Dependencies and Libraries
 - Core runtime: react 19, react-dom 19
