@@ -32,7 +32,7 @@
 | ------ | ------- |
 | npm run dev | Start the Vite dev server on 127.0.0.1:5173 (strict port). |
 | npm run dev:app | Same as `dev`, but injects `VITE_WS_BASE=http://127.0.0.1:8787` for Worker connectivity. |
-| npm run dev:worker | Launch wrangler dev (via `wrangler.worker.toml`) for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787. |
+| npm run dev:worker | Launch wrangler dev (via `wrangler.worker.toml`) for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787 (forced via `--port 8787`). |
 | npm run dev:stack | Run `dev:worker` and `dev:app` in parallel (full local stack). |
 | npm run stack:stop | Stop lingering Vite/Wrangler/workerd processes when ports are stuck. |
 | npm run worker:deploy | Deploy the Durable Object Worker defined in `wrangler.worker.toml`. |
@@ -55,6 +55,7 @@
 - Animation: framer-motion powers the generated Planning Poker interactions
 - Utilities: clsx and tailwind-merge (via cn helper)
 - Tooling: vite 7, @vitejs/plugin-react-swc (SWC), TypeScript 5.9, ESLint 9 (+ react-hooks, react-refresh)
+- Edge runtime: Cloudflare Worker + Durable Object with `new_sqlite_classes` migrations; shared types live in `shared/planning-poker.ts`.
 
 ## Frontend Stack & Styling
 - Router: BrowserRouter wraps App in src/main.tsx; React Router currently renders a single Planning Poker view but provides room for future expansion.

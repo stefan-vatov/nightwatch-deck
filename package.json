@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "dev:app": "cross-env VITE_WS_BASE=http://127.0.0.1:8787 vite --host 127.0.0.1 --port 5173 --strictPort",
-    "dev:worker": "wrangler dev --config wrangler.worker.toml functions/_worker.ts",
+    "dev:worker": "wrangler dev --config wrangler.worker.toml --port 8787 functions/_worker.ts",
     "dev:stack": "npm-run-all --parallel dev:worker dev:app",
     "stack:stop": "bash ./scripts/stop-stack.sh",
     "worker:deploy": "wrangler deploy --config wrangler.worker.toml",

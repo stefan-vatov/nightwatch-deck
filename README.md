@@ -22,7 +22,7 @@ Nightwatch Deck now ships as a collaborative Planning Poker surface for sprint e
 ```bash
 npm install
 npm run dev         # plain Vite dev server (no backend)
-npm run dev:worker  # launches the Cloudflare Worker/Durable Object on http://127.0.0.1:8787
+npm run dev:worker  # launches the Cloudflare Worker/Durable Object on http://127.0.0.1:8787 (forced via --port)
 npm run dev:app     # Vite dev server wired to the worker via VITE_WS_BASE
 npm run dev:stack   # runs dev:worker + dev:app together (recommended)
 npm run stack:stop  # stops any lingering Vite/Wrangler/workerd processes
@@ -66,7 +66,7 @@ wrangler pages project create nightwatch-deck --production-branch main
 npm run worker:deploy  # deploy the Durable Object worker (wrangler.worker.toml)
 npm run pages:deploy   # build + wrangler pages deploy dist
 ```
-- Deploy the Durable Object worker first so the binding + migrations in `wrangler.worker.toml` exist in your account.
+- Deploy the Durable Object worker first so the binding + migrations in `wrangler.worker.toml` (uses `new_sqlite_classes` for free-plan DOs) exist in your account.
 - After the worker is live, set `VITE_WS_BASE` in your Pages project's environment variables to the worker's URL (for example, `https://nightwatch-deck-worker.YOUR_SUBDOMAIN.workers.dev`).
 - `npm run pages:deploy` uploads the static `dist/` bundle to Pages; re-run `worker:deploy` whenever the Durable Object schema changes (bump the migration tag in `wrangler.worker.toml`).
 
