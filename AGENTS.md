@@ -6,18 +6,18 @@
 - Routes (React Router 7):
   - / → Planning Poker (PlanningPokerView → PlanningPokerApp)
 - Persistence: Cloudflare Pages serves the Vite build, while a Worker + Durable Object pair at `/ws/:roomId` keeps `{participants, votes, round}` in-memory and broadcasts updates to every connected browser via WebSockets.
-- Source of truth: README is still the default Vite template. Treat this document as the canonical onboarding guide until README is updated.
+- Source of truth: README now mirrors the Planning Poker surface; keep AGENTS.md handy for deeper architectural context.
 
 ## Project Layout
 | Area | Description |
 | ---- | ----------- |
 | src/App.tsx | Main UI surface. Wraps the PlanningPokerView in the global layout (min-height screen, centered content). React Router remains mounted for future expansion but only renders the PlanningPokerView. |
-| src/views/PlanningPokerView.tsx | Lightweight wrapper that calls ensureLightMode on mount and provides the gradient container + spacing for the generated PlanningPokerApp. |
+| src/views/PlanningPokerView.tsx | Lightweight wrapper that renders the gradient container, hosts the persisted ThemeToggle, and slots in the generated PlanningPokerApp. |
 | src/components/generated/PlanningPokerApp.tsx | Planning Poker implementation + WebSocket client. Manages create/join flows, synchronizes player state via the Worker, handles estimation decks, reveal/reset, and clipboard helpers. Depends on framer-motion, lucide-react, and utility helpers. |
 | src/main.tsx | React entry. Wraps App with BrowserRouter, enables StrictMode, and imports src/index.css. |
 | src/components/ui/button.tsx | shadcn/ui Button with class-variance-authority (cva) variants and sizes. Supports asChild via @radix-ui/react-slot. Styling merged via cn (tailwind-merge + clsx). Exports Button and buttonVariants. |
 | src/components/ui/card.tsx | shadcn/ui Card primitives: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter. Tailwind v4 utility classes + theme tokens. |
-| src/lib/utils.ts | Exposes cn(...inputs) plus ensureLightMode() and removeDarkClasses() for theming control on the Planning Poker route. |
+| src/lib/utils.ts | Exposes cn(...inputs) plus theming helpers (ensureLightMode, removeDarkClasses) for components that need to override palette behavior. |
 | src/index.css | Tailwind v4 base import (@import "tailwindcss") and animation utilities (@import "tw-animate-css"). Defines CSS custom properties for design tokens (background, foreground, card, primary, etc.), dark theme overrides, and an @theme inline map to surface tokens to Tailwind. Sets base layer styles. |
 | src/App.css | Minimal component-scoped styles for #root sizing. |
 | shared/planning-poker.ts | Shared TypeScript contracts for estimation cards, participants, and the Worker/WebSocket message schema. Imported by both the React client and the Worker. |
@@ -74,14 +74,13 @@
   - Provides the global min-height layout and padding.
   - Renders <PlanningPokerView /> as the sole child.
 - PlanningPokerView
-  - Calls ensureLightMode() on mount to prevent dark-mode overrides from affecting the gradient background.
-  - Hosts the rounded gradient container and centers <PlanningPokerApp />.
+  - Hosts the rounded gradient container, ThemeToggle, and centers <PlanningPokerApp />.
 - PlanningPokerApp (generated)
   - Handles room creation, joining via room codes, participant list, estimation cards, reveal/reset flow, and clipboard copy helpers.
   - Uses framer-motion for list/card transitions and lucide-react icons for visual cues.
 - Building blocks and utilities
   - Button/Card primitives remain available for future bespoke UI.
-  - cn helper plus ensureLightMode/removeDarkClasses in src/lib/utils.
+  - cn helper plus optional theme utilities (ensureLightMode/removeDarkClasses) live in src/lib/utils.
 
 ## Realtime Layer (Cloudflare Worker + Durable Object)
 - `functions/_worker.ts` routes `GET /ws/:roomId` upgrades to the `RoomDurableObject` (binding name `ROOM_STATE`). All other requests fall back to the Pages static asset binding.
@@ -109,7 +108,7 @@
 - Expose additional estimation templates (T-shirt sizing, custom decks) and responsive tweaks via hooks such as useIsMobile.
 - Document and refine design tokens in src/index.css; consider extracting a tokens guide.
 - Add unit/component tests around PlanningPokerApp interactions plus utility coverage.
-- Align README with this playbook; either point README to AGENTS.md or migrate key sections to README.
+- Keep README and AGENTS.md in sync as changes land so onboarding stays consistent.
 
 ## Open Questions
 - Documentation ownership: Should AGENTS.md be the canonical onboarding document, or should README become primary with AGENTS as a deeper playbook?

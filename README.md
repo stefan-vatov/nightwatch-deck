@@ -5,10 +5,10 @@ Nightwatch Deck now ships as a collaborative Planning Poker surface for sprint e
 ## Feature Highlights
 - Create or join estimation rooms via short alphanumeric codes (URL query string `?room=CODE` supported).
 - Real-time state is powered by a Cloudflare Worker + Durable Object, so every participant in a room stays in sync over WebSockets.
-- Owner-only controls for reveal/reset once every participant has voted.
+- Room owners control reveal (gated on everyone submitting a vote) and can reset the round whenever they need to restart discussion.
 - Fibonacci card deck with framer-motion micro-interactions.
 - Clipboard helper for sharing room links (auto-selects `window.location.origin` + code).
-- Light-mode wrapper enforced through `ensureLightMode()` so the gradient background stays pristine regardless of global theme toggles.
+- Built-in light/dark theme toggle with persisted preference so squads can estimate in their preferred mode.
 
 ## Tech Stack
 - **Runtime**: React 19 + TypeScript 5.9
@@ -75,9 +75,9 @@ npm run pages:deploy   # build + wrangler pages deploy dist --env-file .env.prod
 | Path | Purpose |
 | ---- | ------- |
 | `src/App.tsx` | Minimal shell that renders `<PlanningPokerView />` inside the global layout. |
-| `src/views/PlanningPokerView.tsx` | Calls `ensureLightMode()` on mount and provides the gradient container + spacing for the generated app. |
+| `src/views/PlanningPokerView.tsx` | Provides the gradient container, renders the generated app, and hosts a persisted light/dark `ThemeToggle`. |
 | `src/components/generated/PlanningPokerApp.tsx` | Planning Poker UI + WebSocket client: room creation/join, voting grid, reveal/reset, clipboard helper. |
-| `src/lib/utils.ts` | `cn`, `ensureLightMode()`, and `removeDarkClasses()` utilities. |
+| `src/lib/utils.ts` | `cn` plus theming helpers (`ensureLightMode()`, `removeDarkClasses()`) used by shared UI. |
 | `src/components/ui/` | shadcn/ui-inspired Button/Card primitives used throughout the experience. |
 | `src/index.css` / `src/App.css` | Tailwind v4 base import, design tokens, and full-height layout helpers. |
 | `shared/planning-poker.ts` | Shared TypeScript contracts for estimation cards, participants, and WebSocket message payloads (used by the React app and Worker). |
@@ -85,7 +85,7 @@ npm run pages:deploy   # build + wrangler pages deploy dist --env-file .env.prod
 | `wrangler.toml` | Cloudflare Pages configuration (build output + compatibility date). |
 | `wrangler.worker.toml` | Worker + Durable Object config (`functions/_worker.ts`, migrations, bindings). |
 
-See `AGENTS.md` (canonical playbook) for deeper architectural notes and `PLANNING_POKER_MIGRATION_PLAN.md` for the original migration rationale.
+See `AGENTS.md` (canonical playbook) for deeper architectural notes.
 
 ## Manual QA Checklist (latest session)
 - Create room → select card → reveal/reset works across two browser windows connected to the same room id.
