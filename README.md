@@ -72,18 +72,18 @@ npm run pages:deploy   # build + wrangler pages deploy dist --env-file .env.prod
 - `npm run pages:deploy` uploads the static `dist/` bundle to Pages; re-run `worker:deploy` whenever the Durable Object schema changes (bump the migration tag in `wrangler.worker.toml`).
 
 ## Project Layout
-| Path | Purpose |
-| ---- | ------- |
-| `src/App.tsx` | Minimal shell that renders `<PlanningPokerView />` inside the global layout. |
-| `src/views/PlanningPokerView.tsx` | Provides the gradient container, renders the generated app, and hosts a persisted light/dark `ThemeToggle`. |
-| `src/components/generated/PlanningPokerApp.tsx` | Planning Poker UI + WebSocket client: room creation/join, voting grid, reveal/reset, clipboard helper. |
-| `src/lib/utils.ts` | `cn` plus theming helpers (`ensureLightMode()`, `removeDarkClasses()`) used by shared UI. |
-| `src/components/ui/` | shadcn/ui-inspired Button/Card primitives used throughout the experience. |
-| `src/index.css` / `src/App.css` | Tailwind v4 base import, design tokens, and full-height layout helpers. |
-| `shared/planning-poker.ts` | Shared TypeScript contracts for estimation cards, participants, and WebSocket message payloads (used by the React app and Worker). |
-| `functions/_worker.ts` | Cloudflare Worker entry that routes `/ws/:roomId` to the `RoomDurableObject`, manages participant state, and broadcasts updates. |
-| `wrangler.toml` | Cloudflare Pages configuration (build output + compatibility date). |
-| `wrangler.worker.toml` | Worker + Durable Object config (`functions/_worker.ts`, migrations, bindings). |
+| Path                                            | Purpose                                                                                                                            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `src/App.tsx`                                   | Minimal shell that renders `<PlanningPokerView />` inside the global layout.                                                       |
+| `src/views/PlanningPokerView.tsx`               | Provides the gradient container, renders the generated app, and hosts a persisted light/dark `ThemeToggle`.                        |
+| `src/components/generated/PlanningPokerApp.tsx` | Planning Poker UI + WebSocket client: room creation/join, voting grid, reveal/reset, clipboard helper.                             |
+| `src/lib/utils.ts`                              | `cn` plus theming helpers (`ensureLightMode()`, `removeDarkClasses()`) used by shared UI.                                          |
+| `src/components/ui/`                            | shadcn/ui-inspired Button/Card primitives used throughout the experience.                                                          |
+| `src/index.css` / `src/App.css`                 | Tailwind v4 base import, design tokens, and full-height layout helpers.                                                            |
+| `shared/planning-poker.ts`                      | Shared TypeScript contracts for estimation cards, participants, and WebSocket message payloads (used by the React app and Worker). |
+| `functions/_worker.ts`                          | Cloudflare Worker entry that routes `/ws/:roomId` to the `RoomDurableObject`, manages participant state, and broadcasts updates.   |
+| `wrangler.toml`                                 | Cloudflare Pages configuration (build output + compatibility date).                                                                |
+| `wrangler.worker.toml`                          | Worker + Durable Object config (`functions/_worker.ts`, migrations, bindings).                                                     |
 
 See `AGENTS.md` (canonical playbook) for deeper architectural notes.
 
@@ -94,11 +94,6 @@ See `AGENTS.md` (canonical playbook) for deeper architectural notes.
 - Copy link button attempts to use the Clipboard API; success feedback may not appear in sandboxed browsers that block `navigator.clipboard`.
 - Leave button clears local state, closes the socket, and returns to the home screen.
 
-## Future Enhancements
-- Optional responsive tweaks (`useIsMobile`), spectator-only URLs, or dark-mode parity.
-- Consider persisting rounds (e.g., Durable Object storage or D1) if you want history beyond the in-memory session.
-- README/AGENTS sync is complete; extend docs here as new features land.
-
 ---
 
-Need more implementation details? Start with `AGENTS.md` for onboarding or ping the team on the Nightwatch Deck channel.
+Need more implementation details? Start with `AGENTS.md` for onboarding.
