@@ -6,14 +6,15 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "dev:app": "cross-env VITE_WS_BASE=http://127.0.0.1:8787 vite --host 127.0.0.1 --port 5173 --strictPort",
-    "dev:worker": "wrangler dev functions/_worker.ts",
+    "dev:worker": "wrangler dev --config wrangler.worker.toml functions/_worker.ts",
     "dev:stack": "npm-run-all --parallel dev:worker dev:app",
     "stack:stop": "bash ./scripts/stop-stack.sh",
+    "worker:deploy": "wrangler deploy --config wrangler.worker.toml",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pages:dev": "npm run build && wrangler pages dev dist --config wrangler.toml",
-    "pages:deploy": "npm run build && wrangler pages deploy dist --config wrangler.toml"
+    "pages:dev": "npm run build && wrangler pages dev dist",
+    "pages:deploy": "npm run build && wrangler pages deploy dist"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",

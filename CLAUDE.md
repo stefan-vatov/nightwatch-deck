@@ -24,15 +24,20 @@
 | components.json | shadcn/ui configuration (style: "new-york"), Tailwind integration (css: "src/index.css"), and alias map for components, utils, ui, lib, hooks. |
 | public/ | Static assets served as-is (e.g., vite.svg). |
 | index.html | Minimal document with #root mount. |
+| wrangler.toml | Cloudflare Pages configuration (build output + compatibility date). |
+| wrangler.worker.toml | Worker + Durable Object config (`functions/_worker.ts`, migrations, bindings). |
 
 ## Tooling & Scripts (package.json)
 | Script | Purpose |
 | ------ | ------- |
 | npm run dev | Start the Vite dev server on 127.0.0.1:5173 (strict port). |
 | npm run dev:app | Same as `dev`, but injects `VITE_WS_BASE=http://127.0.0.1:8787` for Worker connectivity. |
-| npm run dev:worker | Launch wrangler dev for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787. |
+| npm run dev:worker | Launch wrangler dev (via `wrangler.worker.toml`) for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787. |
 | npm run dev:stack | Run `dev:worker` and `dev:app` in parallel (full local stack). |
 | npm run stack:stop | Stop lingering Vite/Wrangler/workerd processes when ports are stuck. |
+| npm run worker:deploy | Deploy the Durable Object Worker defined in `wrangler.worker.toml`. |
+| npm run pages:dev | Build + run `wrangler pages dev dist` for the Pages + Worker emulator. |
+| npm run pages:deploy | Build + run `wrangler pages deploy dist` to publish the static site. |
 | npm run build | Type-check via project references (tsc -b) and build with Vite. |
 | npm run preview | Preview the production build locally. |
 | npm run lint | Run ESLint across the repo. |

@@ -26,6 +26,8 @@ npm run dev:worker  # launches the Cloudflare Worker/Durable Object on http://12
 npm run dev:app     # Vite dev server wired to the worker via VITE_WS_BASE
 npm run dev:stack   # runs dev:worker + dev:app together (recommended)
 npm run stack:stop  # stops any lingering Vite/Wrangler/workerd processes
+npm run worker:deploy # deploy the Durable Object worker via wrangler.worker.toml
+npm run pages:deploy # build + push the static site to Cloudflare Pages
 npm run lint        # eslint .
 npm run build       # type-check + production build
 npm run preview     # serve the dist/ build locally
@@ -53,18 +55,20 @@ npm run dev:stack    # runs wrangler dev + Vite with the correct VITE_WS_BASE
 ### 3. Cloudflare Pages simulator
 Run the production bundle + Worker together through Pages’ emulator (requires the Worker build artifacts):
 ```bash
-npm run pages:dev    # builds dist/ then runs `wrangler pages dev dist --config wrangler.toml`
+npm run pages:dev    # builds dist/ then runs `wrangler pages dev dist`
 ```
 
-### 4. Deploy to Cloudflare Pages
+### 4. Deploy to Cloudflare Pages + Worker
 ```bash
 # optional one-time setup if the Pages project doesn't exist yet
 wrangler pages project create nightwatch-deck --production-branch main
 
-npm run pages:deploy   # builds + wrangler pages deploy dist --config wrangler.toml
+npm run worker:deploy  # deploy the Durable Object worker (wrangler.worker.toml)
+npm run pages:deploy   # build + wrangler pages deploy dist
 ```
-- The deploy script runs `npm run build`, uploads `dist/`, applies the Durable Object migration `v1`, and publishes the Worker+Pages combo.
-- Future Durable Object schema changes should bump the migration info inside `wrangler.toml` before running `pages:deploy` again.
+- Deploy the Durable Object worker first so the binding + migrations in `wrangler.worker.toml` exist in your account.
+- After the worker is live, set `VITE_WS_BASE` in your Pages project's environment variables to the worker's URL (for example, `https://nightwatch-deck-worker.YOUR_SUBDOMAIN.workers.dev`).
+- `npm run pages:deploy` uploads the static `dist/` bundle to Pages; re-run `worker:deploy` whenever the Durable Object schema changes (bump the migration tag in `wrangler.worker.toml`).
 
 ## Project Layout
 | Path | Purpose |
@@ -77,7 +81,8 @@ npm run pages:deploy   # builds + wrangler pages deploy dist --config wrangler.t
 | `src/index.css` / `src/App.css` | Tailwind v4 base import, design tokens, and full-height layout helpers. |
 | `shared/planning-poker.ts` | Shared TypeScript contracts for estimation cards, participants, and WebSocket message payloads (used by the React app and Worker). |
 | `functions/_worker.ts` | Cloudflare Worker entry that routes `/ws/:roomId` to the `RoomDurableObject`, manages participant state, and broadcasts updates. |
-| `wrangler.toml` | Cloudflare Pages configuration + Durable Object binding/migrations. |
+| `wrangler.toml` | Cloudflare Pages configuration (build output + compatibility date). |
+| `wrangler.worker.toml` | Worker + Durable Object config (`functions/_worker.ts`, migrations, bindings). |
 
 See `AGENTS.md` (canonical playbook) for deeper architectural notes and `PLANNING_POKER_MIGRATION_PLAN.md` for the original migration rationale.
 

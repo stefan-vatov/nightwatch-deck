@@ -1,0 +1,11 @@
+name = "nightwatch-deck"
+main = "functions/_worker.ts"
+compatibility_date = "2024-11-05"
+
+[[durable_objects.bindings]]
+name = "ROOM_STATE"
+class_name = "RoomDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RoomDurableObject"]

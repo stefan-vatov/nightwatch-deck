@@ -22,7 +22,8 @@
 | src/App.css | Minimal component-scoped styles for #root sizing. |
 | shared/planning-poker.ts | Shared TypeScript contracts for estimation cards, participants, and the Worker/WebSocket message schema. Imported by both the React client and the Worker. |
 | functions/_worker.ts | Cloudflare Worker entry that routes `/ws/:roomId` to the RoomDurableObject, validates WebSocket upgrade requests, and proxies static asset requests to Pages. |
-| wrangler.toml | Cloudflare configuration: compatibility date, Pages output dir, Durable Object binding (`ROOM_STATE`), and migrations. |
+| wrangler.toml | Cloudflare Pages configuration (build output + compatibility date). |
+| wrangler.worker.toml | Worker + Durable Object configuration (`main`, `ROOM_STATE` binding, migrations). |
 | vite.config.ts | Vite 7 configuration with @vitejs/plugin-react-swc and @tailwindcss/vite. Defines path alias "@": "./src" for cleaner imports (e.g., "@/components/ui/button"). |
 | tsconfig.json / tsconfig.app.json | TypeScript project references and compiler options. Path alias "@/*" → "./src/*" plus "@shared/*" → "./shared/*", strict mode, bundler resolution, React JSX config. |
 | components.json | shadcn/ui configuration (style: "new-york"), Tailwind integration (css: "src/index.css"), and alias map for components, utils, ui, lib, hooks. |
@@ -34,9 +35,12 @@
 | ------ | ------- |
 | npm run dev | Start the Vite dev server on 127.0.0.1:5173 (strict port). |
 | npm run dev:app | Same as `dev`, but injects `VITE_WS_BASE=http://127.0.0.1:8787` for Worker connectivity. |
-| npm run dev:worker | Launch wrangler dev for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787. |
+| npm run dev:worker | Launch wrangler dev (via `wrangler.worker.toml`) for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787. |
 | npm run dev:stack | Run `dev:worker` and `dev:app` in parallel (full local stack). |
 | npm run stack:stop | Stop any lingering Vite/Wrangler/workerd processes so 5173/8787 free up. |
+| npm run worker:deploy | Deploy the Durable Object Worker defined in `wrangler.worker.toml`. |
+| npm run pages:dev | Build + run `wrangler pages dev dist` for the Pages + Worker emulator. |
+| npm run pages:deploy | Build + run `wrangler pages deploy dist` to push the static site. |
 | npm run build | Type-check via project references (tsc -b) and build with Vite. |
 | npm run preview | Preview the production build locally. |
 | npm run lint | Run ESLint across the repo. |
