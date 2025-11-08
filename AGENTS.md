@@ -39,8 +39,8 @@
 | npm run dev:stack | Run `dev:worker` and `dev:app` in parallel (full local stack). |
 | npm run stack:stop | Stop any lingering Vite/Wrangler/workerd processes so 5173/8787 free up. |
 | npm run worker:deploy | Deploy the Durable Object Worker defined in `wrangler.worker.toml`. |
-| npm run pages:dev | Build + run `wrangler pages dev dist` for the Pages + Worker emulator. |
-| npm run pages:deploy | Build + run `wrangler pages deploy dist` to push the static site. |
+| npm run pages:dev | Build + run `wrangler pages dev dist --env-file .env.production` for the Pages + Worker emulator. |
+| npm run pages:deploy | Build + run `wrangler pages deploy dist --env-file .env.production` to push the static site. |
 | npm run build | Type-check via project references (tsc -b) and build with Vite. |
 | npm run preview | Preview the production build locally. |
 | npm run lint | Run ESLint across the repo. |
@@ -58,7 +58,7 @@
 - Animation: framer-motion powers the generated Planning Poker interactions
 - Utilities: clsx and tailwind-merge (via cn helper)
 - Tooling: vite 7, @vitejs/plugin-react-swc (SWC), TypeScript 5.9, ESLint 9 (+ react-hooks, react-refresh)
-- Edge runtime: Cloudflare Worker + Durable Object (wrangler CLI + @cloudflare/workers-types for typings). Shared types live in `shared/planning-poker.ts`; Durable Object migrations use `new_sqlite_classes` for free-plan compatibility.
+- Edge runtime: Cloudflare Worker + Durable Object (wrangler CLI + @cloudflare/workers-types for typings). Shared types live in `shared/planning-poker.ts`; Durable Object migrations use `new_sqlite_classes` for free-plan compatibility. CLI deploys load `.env.production` (copied from `.env.production.example`) so Vite knows the worker URL.
 
 ## Frontend Stack & Styling
 - Router: BrowserRouter wraps App in src/main.tsx; React Router currently renders a single Planning Poker view but provides room for future expansion.

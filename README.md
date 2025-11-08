@@ -27,7 +27,7 @@ npm run dev:app     # Vite dev server wired to the worker via VITE_WS_BASE
 npm run dev:stack   # runs dev:worker + dev:app together (recommended)
 npm run stack:stop  # stops any lingering Vite/Wrangler/workerd processes
 npm run worker:deploy # deploy the Durable Object worker via wrangler.worker.toml
-npm run pages:deploy # build + push the static site to Cloudflare Pages
+npm run pages:deploy # build + push the static site to Cloudflare Pages (reads .env.production)
 npm run lint        # eslint .
 npm run build       # type-check + production build
 npm run preview     # serve the dist/ build locally
@@ -55,7 +55,7 @@ npm run dev:stack    # runs wrangler dev + Vite with the correct VITE_WS_BASE
 ### 3. Cloudflare Pages simulator
 Run the production bundle + Worker together through Pages’ emulator (requires the Worker build artifacts):
 ```bash
-npm run pages:dev    # builds dist/ then runs `wrangler pages dev dist`
+npm run pages:dev    # builds dist/ then runs `wrangler pages dev dist --env-file .env.production`
 ```
 
 ### 4. Deploy to Cloudflare Pages + Worker
@@ -64,10 +64,11 @@ npm run pages:dev    # builds dist/ then runs `wrangler pages dev dist`
 wrangler pages project create nightwatch-deck --production-branch main
 
 npm run worker:deploy  # deploy the Durable Object worker (wrangler.worker.toml)
-npm run pages:deploy   # build + wrangler pages deploy dist
+npm run pages:deploy   # build + wrangler pages deploy dist --env-file .env.production
 ```
 - Deploy the Durable Object worker first so the binding + migrations in `wrangler.worker.toml` (uses `new_sqlite_classes` for free-plan DOs) exist in your account.
 - After the worker is live, set `VITE_WS_BASE` in your Pages project's environment variables to the worker's URL (for example, `https://nightwatch-deck-worker.YOUR_SUBDOMAIN.workers.dev`).
+- Copy `.env.production.example` to `.env.production`, set the same `VITE_WS_BASE`, and keep the file locally (it is gitignored) so CLI deployments inject the correct origin.
 - `npm run pages:deploy` uploads the static `dist/` bundle to Pages; re-run `worker:deploy` whenever the Durable Object schema changes (bump the migration tag in `wrangler.worker.toml`).
 
 ## Project Layout

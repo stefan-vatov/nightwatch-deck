@@ -13,8 +13,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pages:dev": "npm run build && wrangler pages dev dist",
-    "pages:deploy": "npm run build && wrangler pages deploy dist"
+    "pages:dev": "npm run build && wrangler pages dev dist --env-file .env.production",
+    "pages:deploy": "npm run build && wrangler pages deploy dist --env-file .env.production"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
