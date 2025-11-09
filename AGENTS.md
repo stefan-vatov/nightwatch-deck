@@ -9,41 +9,41 @@
 - Source of truth: README now mirrors the Planning Poker surface; keep AGENTS.md handy for deeper architectural context.
 
 ## Project Layout
-| Area | Description |
-| ---- | ----------- |
-| src/App.tsx | Main UI surface. Wraps the PlanningPokerView in the global layout (min-height screen, centered content). React Router remains mounted for future expansion but only renders the PlanningPokerView. |
-| src/views/PlanningPokerView.tsx | Lightweight wrapper that renders the gradient container, hosts the persisted ThemeToggle, and slots in the generated PlanningPokerApp. |
-| src/components/generated/PlanningPokerApp.tsx | Planning Poker implementation + WebSocket client. Manages create/join flows, synchronizes player state via the Worker, handles estimation decks, reveal/reset, and clipboard helpers. Depends on framer-motion, lucide-react, and utility helpers. |
-| src/main.tsx | React entry. Wraps App with BrowserRouter, enables StrictMode, and imports src/index.css. |
-| src/components/ui/button.tsx | shadcn/ui Button with class-variance-authority (cva) variants and sizes. Supports asChild via @radix-ui/react-slot. Styling merged via cn (tailwind-merge + clsx). Exports Button and buttonVariants. |
-| src/components/ui/card.tsx | shadcn/ui Card primitives: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter. Tailwind v4 utility classes + theme tokens. |
-| src/lib/utils.ts | Exposes cn(...inputs) plus theming helpers (ensureLightMode, removeDarkClasses) for components that need to override palette behavior. |
-| src/index.css | Tailwind v4 base import (@import "tailwindcss") and animation utilities (@import "tw-animate-css"). Defines CSS custom properties for design tokens (background, foreground, card, primary, etc.), dark theme overrides, and an @theme inline map to surface tokens to Tailwind. Sets base layer styles. |
-| src/App.css | Minimal component-scoped styles for #root sizing. |
-| shared/planning-poker.ts | Shared TypeScript contracts for estimation cards, participants, and the Worker/WebSocket message schema. Imported by both the React client and the Worker. |
-| functions/_worker.ts | Cloudflare Worker entry that routes `/ws/:roomId` to the RoomDurableObject, validates WebSocket upgrade requests, and proxies static asset requests to Pages. |
-| wrangler.toml | Cloudflare Pages configuration (build output + compatibility date). |
-| wrangler.worker.toml | Worker + Durable Object configuration (`main`, `ROOM_STATE` binding, migrations). |
-| vite.config.ts | Vite 7 configuration with @vitejs/plugin-react-swc and @tailwindcss/vite. Defines path alias "@": "./src" for cleaner imports (e.g., "@/components/ui/button"). |
-| tsconfig.json / tsconfig.app.json | TypeScript project references and compiler options. Path alias "@/*" → "./src/*" plus "@shared/*" → "./shared/*", strict mode, bundler resolution, React JSX config. |
-| components.json | shadcn/ui configuration (style: "new-york"), Tailwind integration (css: "src/index.css"), and alias map for components, utils, ui, lib, hooks. |
-| public/ | Static assets served as-is (e.g., vite.svg). |
-| index.html | Minimal document with #root mount. |
+| Area                                          | Description                                                                                                                                                                                                                                                                                              |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| src/App.tsx                                   | Main UI surface. Wraps the PlanningPokerView in the global layout (min-height screen, centered content). React Router remains mounted for future expansion but only renders the PlanningPokerView.                                                                                                       |
+| src/views/PlanningPokerView.tsx               | Lightweight wrapper that renders the gradient container, hosts the persisted ThemeToggle, and slots in the generated PlanningPokerApp.                                                                                                                                                                   |
+| src/components/generated/PlanningPokerApp.tsx | Planning Poker implementation + WebSocket client. Manages create/join flows, synchronizes player state via the Worker, handles estimation decks, reveal/reset, and clipboard helpers. Depends on framer-motion, lucide-react, and utility helpers.                                                       |
+| src/main.tsx                                  | React entry. Wraps App with BrowserRouter, enables StrictMode, and imports src/index.css.                                                                                                                                                                                                                |
+| src/components/ui/button.tsx                  | shadcn/ui Button with class-variance-authority (cva) variants and sizes. Supports asChild via @radix-ui/react-slot. Styling merged via cn (tailwind-merge + clsx). Exports Button and buttonVariants.                                                                                                    |
+| src/components/ui/card.tsx                    | shadcn/ui Card primitives: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter. Tailwind v4 utility classes + theme tokens.                                                                                                                                                            |
+| src/lib/utils.ts                              | Exposes cn(...inputs) plus theming helpers (ensureLightMode, removeDarkClasses) for components that need to override palette behavior.                                                                                                                                                                   |
+| src/index.css                                 | Tailwind v4 base import (@import "tailwindcss") and animation utilities (@import "tw-animate-css"). Defines CSS custom properties for design tokens (background, foreground, card, primary, etc.), dark theme overrides, and an @theme inline map to surface tokens to Tailwind. Sets base layer styles. |
+| src/App.css                                   | Minimal component-scoped styles for #root sizing.                                                                                                                                                                                                                                                        |
+| shared/planning-poker.ts                      | Shared TypeScript contracts for estimation cards, participants, and the Worker/WebSocket message schema. Imported by both the React client and the Worker.                                                                                                                                               |
+| functions/_worker.ts                          | Cloudflare Worker entry that routes `/ws/:roomId` to the RoomDurableObject, validates WebSocket upgrade requests, and proxies static asset requests to Pages.                                                                                                                                            |
+| wrangler.toml                                 | Cloudflare Pages configuration (build output + compatibility date).                                                                                                                                                                                                                                      |
+| wrangler.worker.toml                          | Worker + Durable Object configuration (`main`, `ROOM_STATE` binding, migrations).                                                                                                                                                                                                                        |
+| vite.config.ts                                | Vite 7 configuration with @vitejs/plugin-react-swc and @tailwindcss/vite. Defines path alias "@": "./src" for cleaner imports (e.g., "@/components/ui/button").                                                                                                                                          |
+| tsconfig.json / tsconfig.app.json             | TypeScript project references and compiler options. Path alias "@/*" → "./src/*" plus "@shared/*" → "./shared/*", strict mode, bundler resolution, React JSX config.                                                                                                                                     |
+| components.json                               | shadcn/ui configuration (style: "new-york"), Tailwind integration (css: "src/index.css"), and alias map for components, utils, ui, lib, hooks.                                                                                                                                                           |
+| public/                                       | Static assets served as-is (e.g., vite.svg).                                                                                                                                                                                                                                                             |
+| index.html                                    | Minimal document with #root mount.                                                                                                                                                                                                                                                                       |
 
 ## Tooling & Scripts (package.json)
-| Script | Purpose |
-| ------ | ------- |
-| npm run dev | Start the Vite dev server on 127.0.0.1:5173 (strict port). |
-| npm run dev:app | Same as `dev`, but injects `VITE_WS_BASE=http://127.0.0.1:8787` for Worker connectivity. |
-| npm run dev:worker | Launch wrangler dev (via `wrangler.worker.toml`) for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787 (port pinned via `--port 8787`). |
-| npm run dev:stack | Run `dev:worker` and `dev:app` in parallel (full local stack). |
-| npm run stack:stop | Stop any lingering Vite/Wrangler/workerd processes so 5173/8787 free up. |
-| npm run worker:deploy | Deploy the Durable Object Worker defined in `wrangler.worker.toml`. |
-| npm run pages:dev | Build + run `wrangler pages dev dist --env-file .env.production` for the Pages + Worker emulator. |
-| npm run pages:deploy | Build + run `wrangler pages deploy dist --env-file .env.production` to push the static site. |
-| npm run build | Type-check via project references (tsc -b) and build with Vite. |
-| npm run preview | Preview the production build locally. |
-| npm run lint | Run ESLint across the repo. |
+| Script                | Purpose                                                                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm run dev           | Start the Vite dev server on 127.0.0.1:5173 (strict port).                                                                                          |
+| npm run dev:app       | Same as `dev`, but injects `VITE_WS_BASE=http://127.0.0.1:8787` for Worker connectivity.                                                            |
+| npm run dev:worker    | Launch wrangler dev (via `wrangler.worker.toml`) for the Cloudflare Worker/Durable Object on http://127.0.0.1:8787 (port pinned via `--port 8787`). |
+| npm run dev:stack     | Run `dev:worker` and `dev:app` in parallel (full local stack).                                                                                      |
+| npm run stack:stop    | Stop any lingering Vite/Wrangler/workerd processes so 5173/8787 free up.                                                                            |
+| npm run worker:deploy | Deploy the Durable Object Worker defined in `wrangler.worker.toml`.                                                                                 |
+| npm run pages:dev     | Build + run `wrangler pages dev dist --env-file .env.production` for the Pages + Worker emulator.                                                   |
+| npm run pages:deploy  | Build + run `wrangler pages deploy dist --env-file .env.production` to push the static site.                                                        |
+| npm run build         | Type-check via project references (tsc -b) and build with Vite.                                                                                     |
+| npm run preview       | Preview the production build locally.                                                                                                               |
+| npm run lint          | Run ESLint across the repo.                                                                                                                         |
 
 > Vite now runs with `--strictPort`, so if 5173 is busy the command will fail—run `npm run stack:stop` (or close other dev servers) before restarting.
 
@@ -102,17 +102,6 @@
 3. Build: npm run build (outputs dist/)
 4. Preview: npm run preview
 5. Lint: npm run lint
-
-## Future Opportunities
-- Layer authentication, spectator-only links, or persistence beyond the in-memory Durable Object (e.g., snapshotting to D1 or R2).
-- Expose additional estimation templates (T-shirt sizing, custom decks) and responsive tweaks via hooks such as useIsMobile.
-- Document and refine design tokens in src/index.css; consider extracting a tokens guide.
-- Add unit/component tests around PlanningPokerApp interactions plus utility coverage.
-- Keep README and AGENTS.md in sync as changes land so onboarding stays consistent.
-
-## Open Questions
-- Documentation ownership: Should AGENTS.md be the canonical onboarding document, or should README become primary with AGENTS as a deeper playbook?
-- Content fidelity: which copy/design elements in the Planning Poker experience are canonical vs. prototype placeholders?
 
 ## Resources
 - Vite: https://vite.dev/guide/
